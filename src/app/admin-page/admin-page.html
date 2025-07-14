@@ -1,0 +1,181 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <h1>Gestione Posizioni Lavorative</h1>
+    <p>Crea e gestisci posizioni lavorative per la valutazione della personalità</p>
+  </div>
+
+  <div class="main-content">
+    <div class="content-grid two-column">
+
+      <div class="content-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>analytics</mat-icon>
+            Statistiche
+          </h2>
+        </div>
+        <div class="card-content">
+          <div class="stats-grid">
+            <div class="stat-item">
+              <div class="stat-icon">
+                <mat-icon>work</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">{{ positions().length }}</div>
+                <div class="stat-label">Posizioni Attive</div>
+              </div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-icon">
+                <mat-icon>people</mat-icon>
+              </div>
+              <div class="stat-content">
+                <div class="stat-number">0</div>
+                <div class="stat-label">Candidati Valutati</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>{{ isEditing ? 'edit' : 'add_circle' }}</mat-icon>
+            {{ getFormTitle() }}
+          </h2>
+          <div class="header-actions" *ngIf="isEditing">
+            <button mat-icon-button (click)="cancelEdit()" class="secondary-button" matTooltip="Annulla modifica">
+              <mat-icon>close</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="card-content">
+          <form [formGroup]="positionForm" (ngSubmit)="onSubmit()" class="position-form">
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Titolo Posizione</mat-label>
+              <input matInput formControlName="title" placeholder="es. Frontend Developer">
+              <mat-icon matPrefix>work</mat-icon>
+              <mat-error *ngIf="positionForm.get('title')?.hasError('required')">
+                Il titolo è obbligatorio
+              </mat-error>
+              <mat-error *ngIf="positionForm.get('title')?.hasError('minlength')">
+                Il titolo deve essere di almeno 2 caratteri
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Descrizione Dettagliata</mat-label>
+              <textarea matInput formControlName="description"
+                        placeholder="Descrivi le responsabilità, competenze richieste e requisiti della posizione..."
+                        rows="4"></textarea>
+              <mat-icon matPrefix>description</mat-icon>
+              <mat-error *ngIf="positionForm.get('description')?.hasError('required')">
+                La descrizione è obbligatoria
+              </mat-error>
+              <mat-error *ngIf="positionForm.get('description')?.hasError('minlength')">
+                La descrizione deve essere di almeno 10 caratteri
+              </mat-error>
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="full-width">
+              <mat-label>Suggerimento per il Chatbot</mat-label>
+              <textarea matInput formControlName="hint"
+                        placeholder="Fornisci indicazioni su cosa valutare durante il colloquio..."
+                        rows="3"></textarea>
+              <mat-icon matPrefix>lightbulb</mat-icon>
+              <mat-error *ngIf="positionForm.get('hint')?.hasError('required')">
+                Il suggerimento è obbligatorio
+              </mat-error>
+              <mat-error *ngIf="positionForm.get('hint')?.hasError('minlength')">
+                Il suggerimento deve essere di almeno 5 caratteri
+              </mat-error>
+            </mat-form-field>
+
+            <div class="form-actions">
+              <button mat-raised-button
+                      type="submit"
+                      [disabled]="!positionForm.valid"
+                      class="primary-button submit-button">
+                <mat-icon>{{ isEditing ? 'save' : 'add' }}</mat-icon>
+                {{ getSubmitButtonText() }}
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div class="content-card slide-up" style="grid-column: 1 / -1;">
+        <div class="card-header">
+          <h2>
+            <mat-icon>list</mat-icon>
+            Posizioni Esistenti ({{ positions().length }})
+          </h2>
+        </div>
+        <div class="card-content">
+
+          <div *ngIf="positions().length === 0" class="empty-state">
+            <mat-icon>work_off</mat-icon>
+            <h3>Nessuna posizione disponibile</h3>
+            <p>Aggiungi la prima posizione lavorativa utilizzando il form sopra.</p>
+          </div>
+
+          <div *ngIf="positions().length > 0" class="positions-grid">
+            <div *ngFor="let position of positions(); let i = index"
+                 class="position-card"
+                 [class.editing]="editingIndex === i">
+
+              <div class="position-header">
+                <div class="position-icon">
+                  <mat-icon>work</mat-icon>
+                </div>
+                <div class="position-info">
+                  <h3>{{ position.title }}</h3>
+                  <p class="position-id">ID: {{ position.id }}</p>
+                </div>
+                <div class="position-actions">
+                  <button mat-icon-button
+                          (click)="editPosition(i)"
+                          class="edit-button"
+                          matTooltip="Modifica posizione">
+                    <mat-icon>edit</mat-icon>
+                  </button>
+                  <button mat-icon-button
+                          (click)="deletePosition(i)"
+                          class="delete-button"
+                          matTooltip="Elimina posizione">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              <div class="position-content">
+                <div class="position-section">
+                  <h4>
+                    <mat-icon>description</mat-icon>
+                    Descrizione
+                  </h4>
+                  <p>{{ position.description }}</p>
+                </div>
+
+                <div class="position-section">
+                  <h4>
+                    <mat-icon>lightbulb</mat-icon>
+                    Suggerimento Chatbot
+                  </h4>
+                  <p>{{ position.hint }}</p>
+                </div>
+              </div>
+
+              <div *ngIf="editingIndex === i" class="editing-indicator">
+                <mat-icon>edit</mat-icon>
+                <span>In modifica</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

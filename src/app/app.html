@@ -1,0 +1,32 @@
+<nav class="top-navbar">
+  <div class="navbar-container">
+    <div class="brand">
+      <mat-icon class="brand-icon">work</mat-icon>
+      <span class="brand-text">{{ title }}</span>
+    </div>
+    <ul class="nav-menu">
+      <li class="nav-item">
+        <a routerLink="/" routerLinkActive="active" [routerLinkActiveOptions]="{exact: true}" class="nav-link">
+          <mat-icon>chat</mat-icon>
+          <span>Chat</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/admin" routerLinkActive="active" class="nav-link">
+          <mat-icon>admin_panel_settings</mat-icon>
+          <span>Admin</span>
+        </a>
+      </li>
+      <li class="nav-item">
+        <a routerLink="/results" routerLinkActive="active" class="nav-link">
+          <mat-icon>analytics</mat-icon>
+          <span>Risultati</span>
+        </a>
+      </li>
+    </ul>
+  </div>
+</nav>
+
+<div class="container">
+  <router-outlet></router-outlet>
+</div>

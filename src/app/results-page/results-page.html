@@ -1,0 +1,280 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <h1>Risultati e Analisi</h1>
+    <p>Dashboard completa per l'analisi dei candidati</p>
+  </div>
+
+  <div class="main-content">
+    <div class="content-grid" [ngClass]="{'two-column': sessions().length > 0, 'single-column': sessions().length === 0}">
+
+      <div class="content-card slide-up" *ngIf="sessions().length > 0">
+        <div class="card-header">
+          <h2>
+            <mat-icon>people</mat-icon>
+            Sessioni di Valutazione
+          </h2>
+          <div class="sessions-controls">
+            <mat-form-field appearance="outline">
+              <mat-label>Cerca candidato...</mat-label>
+              <input matInput (input)="onSearchChange($event)" placeholder="Es. Mario Rossi" />
+              <mat-icon matSuffix>search</mat-icon>
+            </mat-form-field>
+          </div>
+        </div>
+        <div class="card-content">
+          <div class="sessions-grid">
+            <div *ngFor="let session of paginatedSessions()" class="session-card" [class.selected]="selectedSession()?.id === session.id" (click)="selectSession(session)">
+              <div class="session-header">
+                <div class="candidate-info">
+                  <h3>{{ session.candidateName }}</h3>
+                  <p>{{ session.positionTitle }}</p>
+                </div>
+                <div class="session-score" [style.color]="getScoreColor(session.overallScore)">
+                  <span class="score-value">{{ session.overallScore }}%</span>
+                  <span class="score-label">{{ getScoreLabel(session.overallScore) }}</span>
+                </div>
+              </div>
+              <div class="session-details">
+                <div class="detail-item">
+                  <mat-icon>schedule</mat-icon>
+                  <span>{{ session.duration }} min</span>
+                </div>
+                <div class="detail-item">
+                  <mat-icon>calendar_today</mat-icon>
+                  <span>{{ formatDate(session.date) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="content-card slide-up" *ngIf="selectedSession()" id="analysis-section">
+        <div class="card-header">
+          <h2>
+            <mat-icon>person</mat-icon>
+            Analisi Dettagliata: {{ selectedSession()?.candidateName }}
+          </h2>
+          <button mat-raised-button color="primary" (click)="exportResults()">
+            <mat-icon>download</mat-icon>
+            Esporta JSON
+          </button>
+          <button mat-raised-button color="accent" (click)="exportToPDF()">
+            <mat-icon>picture_as_pdf</mat-icon>
+            Esporta PDF
+          </button>
+        </div>
+        <div class="card-content">
+          <mat-tab-group class="analysis-tabs">
+
+            <mat-tab label="Personalità">
+              <div class="tab-content">
+                <div class="chart-section">
+                  <div class="chart-container">
+                    <h3>Profilo Big Five</h3>
+                    <div class="chart-wrapper">
+                      <canvas id="personalityChart"></canvas>
+                    </div>
+                  </div>
+                  <div class="personality-details">
+                    <h4>Dettagli Personalità</h4>
+                    <div class="trait-list">
+                      <div class="trait-item">
+                        <span class="trait-name">Apertura</span>
+                        <div class="trait-bar">
+                          <div class="trait-fill" [style.width.%]="selectedSession()?.personalityProfile?.openness || 0"></div>
+                        </div>
+                        <span class="trait-value">{{ selectedSession()?.personalityProfile?.openness || 0 }}%</span>
+                      </div>
+                      <div class="trait-item">
+                        <span class="trait-name">Coscienziosità</span>
+                        <div class="trait-bar">
+                          <div class="trait-fill" [style.width.%]="selectedSession()?.personalityProfile?.conscientiousness || 0"></div>
+                        </div>
+                        <span class="trait-value">{{ selectedSession()?.personalityProfile?.conscientiousness || 0 }}%</span>
+                      </div>
+                      <div class="trait-item">
+                        <span class="trait-name">Estroversione</span>
+                        <div class="trait-bar">
+                          <div class="trait-fill" [style.width.%]="selectedSession()?.personalityProfile?.extraversion || 0"></div>
+                        </div>
+                        <span class="trait-value">{{ selectedSession()?.personalityProfile?.extraversion || 0 }}%</span>
+                      </div>
+                      <div class="trait-item">
+                        <span class="trait-name">Gradevolezza</span>
+                        <div class="trait-bar">
+                          <div class="trait-fill" [style.width.%]="selectedSession()?.personalityProfile?.agreeableness || 0"></div>
+                        </div>
+                        <span class="trait-value">{{ selectedSession()?.personalityProfile?.agreeableness || 0 }}%</span>
+                      </div>
+                      <div class="trait-item">
+                        <span class="trait-name">Stabilità Emotiva</span>
+                        <div class="trait-bar">
+                          <div class="trait-fill" [style.width.%]="100 - (selectedSession()?.personalityProfile?.neuroticism || 0)"></div>
+                        </div>
+                        <span class="trait-value">{{ 100 - (selectedSession()?.personalityProfile?.neuroticism || 0) }}%</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Competenze">
+              <div class="tab-content">
+                <div class="chart-section">
+                  <div class="chart-container">
+                    <h3>Profilo Competenze</h3>
+                    <div class="chart-wrapper">
+                      <canvas id="skillsChart"></canvas>
+                    </div>
+                  </div>
+                  <div class="skills-details">
+                    <h4>Dettagli Competenze</h4>
+                    <div class="skills-grid">
+                      <div class="skill-card">
+                        <mat-icon>code</mat-icon>
+                        <h5>Tecniche</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.technical || 0 }}%</div>
+                      </div>
+                      <div class="skill-card">
+                        <mat-icon>chat</mat-icon>
+                        <h5>Comunicazione</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.communication || 0 }}%</div>
+                      </div>
+                      <div class="skill-card">
+                        <mat-icon>groups</mat-icon>
+                        <h5>Leadership</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.leadership || 0 }}%</div>
+                      </div>
+                      <div class="skill-card">
+                        <mat-icon>psychology</mat-icon>
+                        <h5>Problem Solving</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.problemSolving || 0 }}%</div>
+                      </div>
+                      <div class="skill-card">
+                        <mat-icon>lightbulb</mat-icon>
+                        <h5>Creatività</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.creativity || 0 }}%</div>
+                      </div>
+                      <div class="skill-card">
+                        <mat-icon>handshake</mat-icon>
+                        <h5>Teamwork</h5>
+                        <div class="skill-score">{{ selectedSession()?.skillsProfile?.teamwork || 0 }}%</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Raccomandazioni">
+              <div class="tab-content">
+                <div class="recommendations-section">
+                  <h3>Raccomandazioni per {{ selectedSession()?.candidateName }}</h3>
+                  <div class="recommendations-list">
+                    <div *ngFor="let recommendation of selectedSession()?.recommendations" class="recommendation-item">
+                      <mat-icon>check_circle</mat-icon>
+                      <span>{{ recommendation }}</span>
+                    </div>
+                  </div>
+
+                  <div class="fit-analysis">
+                    <h4>Analisi di Compatibilità</h4>
+                    <div class="fit-score">
+                      <div class="fit-circle" [style.background]="'conic-gradient(#4CAF50 0deg ' + (selectedSession()?.overallScore || 0) * 3.6 + 'deg, #e0e0e0 ' + (selectedSession()?.overallScore || 0) * 3.6 + 'deg 360deg)'">
+                        <div class="fit-inner">
+                          <span class="fit-percentage">{{ selectedSession()?.overallScore }}%</span>
+                          <span class="fit-label">Compatibilità</span>
+                        </div>
+                      </div>
+                      <div class="fit-description">
+                        <p *ngIf="(selectedSession()?.overallScore || 0) >= 80">
+                          <strong>Candidato Eccellente:</strong> Profilo altamente compatibile con la posizione richiesta.
+                        </p>
+                        <p *ngIf="(selectedSession()?.overallScore || 0) >= 60 && (selectedSession()?.overallScore || 0) < 80">
+                          <strong>Candidato Valido:</strong> Buona compatibilità con margini di miglioramento.
+                        </p>
+                        <p *ngIf="(selectedSession()?.overallScore || 0) < 60">
+                          <strong>Candidato da Sviluppare:</strong> Necessita di formazione aggiuntiva.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Valutazione">
+              <div class="tab-content">
+                <div class="evaluation-section">
+                  <h3>Valutazione Dettagliata</h3>
+                  <div class="evaluation-grid">
+                    <div class="evaluation-card">
+                      <h4>Punti di Forza</h4>
+                      <ul>
+                        <li *ngFor="let strength of getStrengths(selectedSession())">{{ strength }}</li>
+                      </ul>
+                    </div>
+                    <div class="evaluation-card">
+                      <h4>Aree di Miglioramento</h4>
+                      <ul>
+                        <li *ngFor="let weakness of getWeaknesses(selectedSession())">{{ weakness }}</li>
+                      </ul>
+                    </div>
+                  </div>
+                  <div class="suggested-questions">
+                    <h4>Domande Suggerite per il Colloquio</h4>
+                    <ul>
+                      <li *ngFor="let question of selectedSession()?.recommendations">{{ question }}</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+            <mat-tab label="Conversazione">
+              <div class="tab-content">
+                <div class="conversation-section">
+                  <h3>Trascrizione della Conversazione</h3>
+                  <div class="messages-container">
+                    <div *ngFor="let message of selectedSession()?.messages" class="message" [ngClass]="{'user-message': message.sender === 'user', 'bot-message': message.sender === 'bot'}">
+                      <div class="message-avatar">
+                        <mat-icon>{{ message.sender === 'user' ? 'person' : 'smart_toy' }}</mat-icon>
+                      </div>
+                      <div class="message-content">
+                        <div class="message-text">{{ message.text }}</div>
+                        <div class="message-time">{{ message.timestamp | date:'short' }}</div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </mat-tab>
+
+          </mat-tab-group>
+        </div>
+      </div>
+
+      <div class="content-card slide-up" *ngIf="sessions().length === 0">
+        <div class="card-header">
+          <h2>
+            <mat-icon>analytics</mat-icon>
+            Nessuna sessione completata
+          </h2>
+        </div>
+        <div class="card-content">
+          <div class="empty-state">
+            <mat-icon class="empty-icon">analytics</mat-icon>
+            <h2>Nessuna sessione completata</h2>
+            <p>Non ci sono ancora sessioni di valutazione completate da visualizzare.</p>
+            <button mat-raised-button color="primary" routerLink="/">
+              <mat-icon>chat</mat-icon>
+              Inizia una Valutazione
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,202 @@
+<div class="page-container fade-in">
+  <div class="page-header">
+    <h1>Chatbot Personalità</h1>
+    <p>Interagisci con l'AI per valutare la tua personalità e competenze professionali</p>
+  </div>
+
+  <div class="main-content">
+    <div *ngIf="!selectedPosition()" class="content-grid single-column">
+      <div class="content-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>work</mat-icon>
+            Seleziona una posizione per iniziare la chat
+          </h2>
+        </div>
+        <div class="card-content">
+          <div *ngIf="positions().length > 0; else noPositions" class="positions-grid">
+            <div *ngFor="let position of positions()"
+                 class="position-card fade-in"
+                 (click)="selectPosition(position)">
+              <div class="position-card-header">
+                <mat-icon>work</mat-icon>
+                <h3>{{ position.title }}</h3>
+              </div>
+              <div class="position-card-content">
+                <p>{{ position.description | slice:0:150 }}...</p>
+                <div class="position-card-footer">
+                  <button mat-raised-button class="primary-button">
+                    <mat-icon>chat</mat-icon>
+                    Inizia Valutazione
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <ng-template #noPositions>
+            <div class="empty-state">
+              <mat-icon>work_off</mat-icon>
+              <h3>Nessuna posizione disponibile</h3>
+              <p>Contatta l'amministratore per aggiungere posizioni lavorative da valutare.</p>
+              <button mat-raised-button routerLink="/admin" class="primary-button">
+                <mat-icon>admin_panel_settings</mat-icon>
+                Vai alla Gestione Posizioni
+              </button>
+            </div>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+
+    <div *ngIf="selectedPosition()" class="content-grid single-column">
+      <div class="content-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>work</mat-icon>
+            {{ selectedPosition()?.title }}
+          </h2>
+          <button mat-icon-button (click)="changePosition()" class="secondary-button" matTooltip="Go Back">
+            <mat-icon>arrow_back</mat-icon>
+          </button>
+        </div>
+        <div class="card-content position-info-content">
+          <p>{{ selectedPosition()?.description }}</p>
+        </div>
+      </div>
+
+      <div *ngIf="!userInfo()" class="content-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>person</mat-icon>
+            Informazioni Candidato
+          </h2>
+        </div>
+        <div class="card-content">
+          <form [formGroup]="userInfoForm" (ngSubmit)="submitUserInfo()">
+            <div class="form-section">
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Nome Completo</mat-label>
+                  <input matInput formControlName="name" placeholder="Inserisci il tuo nome completo">
+                  <mat-icon matSuffix>person</mat-icon>
+                  <mat-error *ngIf="userInfoForm.get('name')?.hasError('required')">
+                    Il nome è obbligatorio
+                  </mat-error>
+                </mat-form-field>
+              </div>
+
+              <div class="form-row">
+                <mat-form-field appearance="outline" class="full-width">
+                  <mat-label>Email</mat-label>
+                  <input matInput formControlName="email" type="email" placeholder="Inserisci la tua email">
+                  <mat-icon matSuffix>email</mat-icon>
+                  <mat-error *ngIf="userInfoForm.get('email')?.hasError('required')">
+                    L'email è obbligatoria
+                  </mat-error>
+                  <mat-error *ngIf="userInfoForm.get('email')?.hasError('email')">
+                    Inserisci un'email valida
+                  </mat-error>
+                </mat-form-field>
+              </div>
+            </div>
+
+            <div class="form-actions">
+              <button mat-raised-button type="submit" [disabled]="!userInfoForm.valid" class="primary-button">
+                <mat-icon>chat</mat-icon>
+                Inizia Chat
+              </button>
+            </div>
+          </form>
+        </div>
+      </div>
+
+      <div *ngIf="userInfo()" class="content-card full-height-card slide-up">
+        <div class="card-header">
+          <h2>
+            <mat-icon>chat</mat-icon>
+            Chat di Valutazione
+          </h2>
+          <div class="chat-actions">
+            <button mat-icon-button (click)="endSession()"
+                    [disabled]="messages().length === 0"
+                    class="danger-button" matTooltip="End Session">
+              <mat-icon>stop</mat-icon>
+            </button>
+          </div>
+        </div>
+        <div class="card-content chat-content">
+          <div class="scrollable-area">
+          <div class="messages-container" #messagesContainer>
+            <div *ngFor="let message of messages(); let i = index"
+                 class="message fade-in"
+                 [ngClass]="{'user-message': message.sender === 'user', 'bot-message': message.sender === 'bot'}">
+              <div class="message-avatar">
+                <mat-icon>{{ message.sender === 'user' ? 'person' : 'smart_toy' }}</mat-icon>
+              </div>
+              <div class="message-content">
+                <div class="message-text">{{ message.text }}</div>
+                <div class="message-time">{{ message.timestamp | date:'short' }}</div>
+              </div>
+            </div>
+
+            <div *ngIf="isLoading()" class="message bot-message typing-indicator fade-in">
+              <div class="message-avatar">
+                <mat-icon>smart_toy</mat-icon>
+              </div>
+              <div class="message-content">
+                <div class="typing-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+              </div>
+            </div>
+            <div *ngIf="isLoading()" class="message bot-message typing-indicator fade-in">…</div>
+            <div class="suggested-answers" *ngIf="!chatEnded() && suggestedAnswers().length > 0">
+                <button *ngFor="let answer of suggestedAnswers()" (click)="sendSuggestedAnswer(answer)" mat-stroked-button
+                  class="suggested-button">
+                  {{ answer }}
+                  </button>
+               </div>
+             </div>
+          </div>
+
+          <div class="input-area">
+            <form [formGroup]="messageForm" (ngSubmit)="sendMessage()" class="message-form" *ngIf="!chatEnded()">
+              <div class="message-input-wrapper">
+                <mat-form-field appearance="outline" class="message-input">
+                  <mat-label>Scrivi il tuo messaggio...</mat-label>
+                  <textarea matInput formControlName="message" [disabled]="isLoading() || chatLocked()"
+                    placeholder="Descrivi la tua esperienza, competenze o rispondi alle domande..." rows="1" cdkTextareaAutosize
+                   cdkAutosizeMinRows="1" cdkAutosizeMaxRows="5"></textarea>
+                  </mat-form-field>
+                <button mat-icon-button type="submit" class="send-button-inside"
+                  [disabled]="!messageForm.get('message')?.value?.trim() || isLoading() || chatLocked()">
+                  <mat-icon>send</mat-icon>
+                  </button>
+                </div>
+              </form>
+            <div *ngIf="chatEnded()" class="chat-ended-state">
+              <div class="ended-message">
+                <mat-icon>check_circle</mat-icon>
+                <h3>Sessione Completata</h3>
+                <p>La tua valutazione è stata salvata. Puoi visualizzare i risultati nella pagina dedicata.</p>
+              </div>
+              <div class="ended-actions">
+                <button mat-raised-button color="primary" routerLink="/results">
+                  <mat-icon>analytics</mat-icon>
+                  Visualizza Risultati
+                </button>
+                <button mat-stroked-button (click)="startNewChat()">
+                  <mat-icon>refresh</mat-icon>
+                  Nuova Valutazione
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
